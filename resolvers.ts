@@ -73,59 +73,60 @@ export const resolvers = {
                 _id:insertedId,
                 ...args
             }
-        }
+        },
+        addBook: async(
+            _:unknown,
+            args:MutationArgsLibros,
+            context:Context,
+        ):Promise<Libros> =>{
+            const {insertedId} = await context.librosCollection.insertOne({
+                titulo: args.titulo,
+                autor: args.autor,
+                ISBN: args.ISBN,
+                fechapublicacion: args.fechapublicacion
+            })
+            return {
+                _id: insertedId,
+                ...args
+            }
+        },
+    
+        borrowBook: async(
+            _:unknown,
+            args:MutationArgsPrestamos,
+            context:Context
+        ):Promise<Prestamos> =>{
+            const {insertedId} = await context.prestamosCollection.insertOne({
+                usuarioid: new ObjectId(args.usuarioid),
+                libroid: new ObjectId(args.libroid),
+                fechaprestamo: new Date(args.fechaprestamo),
+                fechadevolucion: new Date(args.fechadevolucion)
+            })
+            const respuesta = await context.prestamosCollection.findOne({_id: insertedId})
+            const datosusuario = await context.usuariosCollection.findOne({_id: new ObjectId(args.usuarioid)})
+            const datoslibro = await context.librosCollection.findOne({_id: new ObjectId(args.libroid)})
+            if(!datosusuario)throw new GraphQLError("NO se encuentra el usuario del prestamo")
+            if(!respuesta)throw new GraphQLError("No se ha insertado adecuadamente")
+            return  {
+                ...respuesta,
+                ...datosusuario,
+                ...datoslibro
+            }
+        },
+    
+        deleteBorrow: async(
+            _:unknown,
+            args:MutationArgsPrestamos,
+            context : Context
+        ):Promise<boolean>=>{
+            const {deletedCount} = await context.prestamosCollection.deleteOne({_id:new ObjectId(args.id)})
+            if(!deletedCount)return false
+            return true
+        },
 
     },
 
-    addBook: async(
-        _:unknown,
-        args:MutationArgsLibros,
-        context:Context,
-    ):Promise<Libros> =>{
-        const {insertedId} = await context.librosCollection.insertOne({
-            titulo: args.titulo,
-            autor: args.autor,
-            ISBN: args.ISBN,
-            fechapublicacion: args.fechapublicacion
-        })
-        return {
-            _id: insertedId,
-            ...args
-        }
-    },
-
-    borrowBook: async(
-        _:unknown,
-        args:MutationArgsPrestamos,
-        context:Context
-    ):Promise<Prestamos> =>{
-        const {insertedId} = await context.prestamosCollection.insertOne({
-            usuarioid: args.usuarioid,
-            libroid: args.libroid,
-            fechaprestamo: new Date(args.fechaprestamo),
-            fechadevolucion: new Date(args.fechadevolucion)
-        })
-        const respuesta = await context.prestamosCollection.findOne({_id: insertedId})
-        const datosusuario = await context.usuariosCollection.findOne({_id: new ObjectId(args.usuarioid)})
-        const datoslibro = await context.librosCollection.findOne({_id: new ObjectId(args.libroid)})
-        if(!datosusuario)throw new GraphQLError("NO se encuentra el usuario del prestamo")
-        if(!respuesta)throw new GraphQLError("No se ha insertado adecuadamente")
-        return  {
-            ...respuesta,
-            ...datosusuario,
-            ...datoslibro
-        }
-    },
-
-    deleteBorrow: async(
-        _:unknown,
-        args:MutationArgsPrestamos,
-        context : Context
-    ):Promise<boolean>=>{
-        const {deletedCount} = await context.prestamosCollection.deleteOne({_id:new ObjectId(args.id)})
-        if(!deletedCount)return false
-        return true
-    },
+    
 
     //
 }
