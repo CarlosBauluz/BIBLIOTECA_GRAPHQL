@@ -44,8 +44,16 @@ export const resolvers = {
     },
     Prestamos: {
         id: (parent: Prestamos) => parent._id!.toString(),
-        usuarioid:(parent:Prestamos) => parent.usuarioid.toString(),
-        libroid:(parent:Prestamos) => parent.libroid.toString(),
+        usuarioid: async(parent:Prestamos, args: MutationArgsUsuarios, context: Context) => {
+            const mostrar = await context.usuariosCollection.findOne({_id: parent.usuarioid})
+            if(!mostrar){throw new GraphQLError("No existe ese usuarioId")}
+            return mostrar
+        },
+        libroid:async(parent:Prestamos, args: MutationArgsLibros, context: Context) => {
+            const mostrar = await context.librosCollection.findOne({_id: parent.libroid})
+            if(!mostrar){throw new GraphQLError("No existe ese libroId")}
+            return mostrar
+        },
         fechaprestamo:(parent:Prestamos)=> parent.fechaprestamo.toString(),
         fechadevolucion:(parent:Prestamos) => parent.fechadevolucion.toString()
 
@@ -96,6 +104,10 @@ export const resolvers = {
             args:MutationArgsPrestamos,
             context:Context
         ):Promise<Prestamos> =>{
+            const datosusuario = await context.usuariosCollection.findOne({_id: new ObjectId(args.usuarioid)})
+            const datoslibro = await context.librosCollection.findOne({_id: new ObjectId(args.libroid)})
+            if(!datosusuario)throw new GraphQLError("NO se encuentra el usuario del prestamo")
+  
             const {insertedId} = await context.prestamosCollection.insertOne({
                 usuarioid: new ObjectId(args.usuarioid),
                 libroid: new ObjectId(args.libroid),
@@ -103,15 +115,10 @@ export const resolvers = {
                 fechadevolucion: new Date(args.fechadevolucion)
             })
             const respuesta = await context.prestamosCollection.findOne({_id: insertedId})
-            const datosusuario = await context.usuariosCollection.findOne({_id: new ObjectId(args.usuarioid)})
-            const datoslibro = await context.librosCollection.findOne({_id: new ObjectId(args.libroid)})
-            if(!datosusuario)throw new GraphQLError("NO se encuentra el usuario del prestamo")
             if(!respuesta)throw new GraphQLError("No se ha insertado adecuadamente")
-            return  {
-                ...respuesta,
-                ...datosusuario,
-                ...datoslibro
-            }
+            
+
+            return respuesta
         },
     
         deleteBorrow: async(
