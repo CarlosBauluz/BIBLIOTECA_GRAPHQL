@@ -49,7 +49,7 @@ export const resolvers = {
             if(!mostrar){throw new GraphQLError("No existe ese usuarioId")}
             return mostrar
         },
-        libroid:async(parent:Prestamos, args: MutationArgsLibros, context: Context) => {
+        libroid: async(parent:Prestamos, args: MutationArgsLibros, context: Context) => {
             const mostrar = await context.librosCollection.findOne({_id: parent.libroid})
             if(!mostrar){throw new GraphQLError("No existe ese libroId")}
             return mostrar
@@ -118,7 +118,14 @@ export const resolvers = {
             if(!respuesta)throw new GraphQLError("No se ha insertado adecuadamente")
             
 
-            return respuesta
+            return {
+                _id:insertedId,
+                usuarioid: new ObjectId(args.usuarioid),
+                libroid: new ObjectId(args.libroid),
+                fechaprestamo: new Date(args.fechaprestamo),
+                fechadevolucion: new Date(args.fechadevolucion)
+
+            }
         },
     
         deleteBorrow: async(
